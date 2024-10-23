@@ -1,0 +1,40 @@
+name: Documentation Deploy Action
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y doxygen
+          pip install numpy sphinx pydata-sphinx-theme sphinx-math-dollar sphinx-autodoc-typehints breathe
+        shell: bash
+
+      - name: Generate Doxygen documentation
+        run: doxygen
+        shell: bash
+
+      - name: Generate Sphinx documentation
+        working-directory: ./docs
+        run: make html
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          folder: docs/_build/html

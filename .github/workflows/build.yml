@@ -1,0 +1,65 @@
+name: Build Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            c: gcc
+            cpp: g++
+          - os: ubuntu-24.04
+            c: clang
+            cpp: clang++
+          - os: macos-15
+            c: gcc-14
+            cpp: g++-14
+          - os: macos-15
+            c: /opt/homebrew/opt/llvm/bin/clang
+            cpp: /opt/homebrew/opt/llvm/bin/clang++
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install numpy
+
+    - name: Set up compiler
+      if: runner.os == 'Linux'
+      run: |
+        if [ "${{ matrix.c }}" == "gcc" ]; then
+          sudo apt-get install -y gcc g++;
+        else
+          sudo apt-get install -y clang;
+        fi
+
+    - name: Set up compiler
+      if: runner.os == 'macOS'
+      run: |
+        brew install llvm gcc@14;
+
+    - name: Compile with ${{ matrix.cpp }}
+      env:
+        CC: ${{ matrix.c }}
+        CXX: ${{ matrix.cpp }}
+      run: |
+        cd python
+        pip install -v .
