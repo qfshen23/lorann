@@ -32,7 +32,7 @@ On macOS, you must use the Homebrew version of Clang as a compiler:
 
 ```shell script
 brew install llvm libomp
-CC=/opt/homebrew/opt/llvm/bin/clang CXX=/opt/homebrew/opt/llvm/bin/clang++ pip install .
+CC=/opt/homebrew/opt/llvm/bin/clang CXX=/opt/homebrew/opt/llvm/bin/clang++ LDFLAGS=-L/opt/homebrew/opt/llvm/lib pip install .
 ```
 
 An example Dockerfile is provided for building the LoRANN Python wrapper in a Linux environment:
