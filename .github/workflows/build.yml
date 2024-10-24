@@ -20,9 +20,6 @@ jobs:
             c: clang
             cpp: clang++
           - os: macos-15
-            c: gcc-14
-            cpp: g++-14
-          - os: macos-15
             c: /opt/homebrew/opt/llvm/bin/clang
             cpp: /opt/homebrew/opt/llvm/bin/clang++
 
@@ -54,7 +51,7 @@ jobs:
     - name: Set up compiler
       if: runner.os == 'macOS'
       run: |
-        brew install llvm gcc@14;
+        brew install llvm libomp gcc@14;
 
     - name: Compile with ${{ matrix.cpp }}
       env:

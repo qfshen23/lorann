@@ -104,7 +104,10 @@ class LorannIndex(object):
         self.built = False
 
     def build(
-        self, approximate: bool = True, training_queries: Optional[npt.NDArray[np.float32]] = None
+        self,
+        approximate: bool = True,
+        training_queries: Optional[npt.NDArray[np.float32]] = None,
+        n_threads: int = -1,
     ) -> None:
         """
         Builds the LoRANN index.
@@ -118,6 +121,7 @@ class LorannIndex(object):
                 useful in the out-of-distribution setting where the training and query distributions
                 differ. Ideally there should be at least as many training query points as there are
                 index points.
+            n_threads: Number of CPU threads to use (set to -1 to use all cores)
 
         Raises:
             RuntimeError: If the index has already been built.
@@ -127,7 +131,7 @@ class LorannIndex(object):
             raise RuntimeError("The index has already been built")
 
         if training_queries is None:
-            self.index.build(approximate)
+            self.index.build(approximate, n_threads)
         else:
             _, dim = _check_data_matrix(training_queries)
             if dim != self.dim:
@@ -135,7 +139,7 @@ class LorannIndex(object):
                     "The training query matrix should have the same number of columns as the data matrix"
                 )
 
-            self.index.build(approximate, training_queries)
+            self.index.build(approximate, n_threads, training_queries)
 
         self.built = True
 
@@ -146,6 +150,7 @@ class LorannIndex(object):
         clusters_to_search: int,
         points_to_rerank: int,
         return_distances: bool = False,
+        n_threads: int = -1,
     ) -> Union[npt.NDArray[np.int32], Tuple[npt.NDArray[np.int32], npt.NDArray[np.float32]]]:
         """
         Performs an approximate nearest neighbor query for single or multiple query vectors.
@@ -162,6 +167,8 @@ class LorannIndex(object):
                 set to 0, no re-ranking is performed and the original data does not need to be kept
                 in memory. In this case the final returned distances are approximate distances.
             return_distances: Whether to also return distances. Defaults to False.
+            n_threads: Number of CPU threads to use (set to -1 to use all cores). Only has effect if
+                multiple query vectors are provided.
 
         Raises:
             RuntimeError: If the index has not been been built.
@@ -178,13 +185,16 @@ class LorannIndex(object):
         if q.dtype != np.float32:
             raise ValueError("The query matrix should have type float32")
 
-        return self.index.search(q, k, clusters_to_search, points_to_rerank, return_distances)
+        return self.index.search(
+            q, k, clusters_to_search, points_to_rerank, return_distances, n_threads
+        )
 
     def exact_search(
         self,
         q: npt.NDArray[np.float32],
         k: int,
         return_distances: bool = False,
+        n_threads: int = -1,
     ) -> Union[npt.NDArray[np.int32], Tuple[npt.NDArray[np.int32], npt.NDArray[np.float32]]]:
         """
         Performs an exact nearest neighbor query for single or multiple query vectors.
@@ -197,6 +207,8 @@ class LorannIndex(object):
                 vector per row.
             k: The number of nearest neighbors to be returned.
             return_distances: Whether to also return distances. Defaults to False.
+            n_threads: Number of CPU threads to use (set to -1 to use all cores). Only has effect if
+                multiple query vectors are provided.
 
         Raises:
             ValueError: If the input parameters are invalid.
@@ -210,7 +222,7 @@ class LorannIndex(object):
         if q.dtype != np.float32:
             raise ValueError("The query matrix should have type float32")
 
-        return self.index.exact_search(q, k, return_distances)
+        return self.index.exact_search(q, k, return_distances, n_threads)
 
     def save(self, fname: str) -> None:
         """
@@ -343,12 +355,15 @@ class KMeans(object):
         )
         self.trained = False
 
-    def train(self, data: npt.NDArray[np.float32]) -> List[npt.NDArray[np.int32]]:
+    def train(
+        self, data: npt.NDArray[np.float32], n_threads: int = -1
+    ) -> List[npt.NDArray[np.int32]]:
         """
         Performs the clustering on the provided data.
 
         Args:
             data: The data as an $n \\times d$ numpy array.
+            n_threads: Number of CPU threads to use (set to -1 to use all cores)
 
         Raises:
             ValueError: If the data matrix is invalid.
@@ -372,7 +387,7 @@ class KMeans(object):
             raise ValueError("Data matrix contains NaN")
 
         self.trained = True
-        return self.index.train(data, n_samples, dim)
+        return self.index.train(data, n_samples, dim, n_threads)
 
     def assign(self, data: npt.NDArray[np.float32], k: int) -> List[npt.NDArray[np.int32]]:
         """

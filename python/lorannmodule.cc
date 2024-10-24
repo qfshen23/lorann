@@ -1,4 +1,5 @@
 #define PY_SSIZE_T_CLEAN
+#include <omp.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -71,9 +72,13 @@ static void kmeans_dealloc(KMeansIndex *self) {
 
 static PyObject *kmeans_train(KMeansIndex *self, PyObject *args) {
   PyArrayObject *py_data;
-  int n, dim;
+  int n, dim, n_threads;
 
-  if (!PyArg_ParseTuple(args, "O!ii", &PyArray_Type, &py_data, &n, &dim)) return NULL;
+  if (!PyArg_ParseTuple(args, "O!iii", &PyArray_Type, &py_data, &n, &dim, &n_threads)) return NULL;
+
+  if (n_threads <= 0) {
+    n_threads = omp_get_max_threads();
+  }
 
   Py_INCREF(py_data);
   self->py_data = py_data;
@@ -82,7 +87,7 @@ static PyObject *kmeans_train(KMeansIndex *self, PyObject *args) {
 
   std::vector<std::vector<int>> idxs;
   Py_BEGIN_ALLOW_THREADS;
-  idxs = self->index->train(data, n, dim);
+  idxs = self->index->train(data, n, dim, n_threads);
   Py_END_ALLOW_THREADS;
 
   PyObject *list = PyList_New(idxs.size());
@@ -237,19 +242,24 @@ static PyObject *lorann_get_dissimilarity(LorannIndex *self, PyObject *args) {
 
 static PyObject *lorann_build(LorannIndex *self, PyObject *args) {
   int approximate = 1;
+  int n_threads = -1;
   PyArrayObject *Q = NULL;
 
-  if (!PyArg_ParseTuple(args, "|iO!", &approximate, &PyArray_Type, &Q)) return NULL;
+  if (!PyArg_ParseTuple(args, "|iiO!", &approximate, &n_threads, &PyArray_Type, &Q)) return NULL;
+
+  if (n_threads <= 0) {
+    n_threads = omp_get_max_threads();
+  }
 
   if (Q != NULL) {
     float *indata = reinterpret_cast<float *>(PyArray_DATA(Q));
     int n = PyArray_DIM(Q, 0);
     Py_BEGIN_ALLOW_THREADS;
-    self->index->build(indata, n, approximate);
+    self->index->build(indata, n, approximate, n_threads);
     Py_END_ALLOW_THREADS;
   } else {
     Py_BEGIN_ALLOW_THREADS;
-    self->index->build(approximate);
+    self->index->build(approximate, n_threads);
     Py_END_ALLOW_THREADS;
   }
 
@@ -258,11 +268,15 @@ static PyObject *lorann_build(LorannIndex *self, PyObject *args) {
 
 static PyObject *lorann_search(LorannIndex *self, PyObject *args) {
   PyArrayObject *v;
-  int k, dim, n, clusters_to_search, points_to_rerank, return_distances;
+  int k, dim, n, clusters_to_search, points_to_rerank, return_distances, n_threads;
 
-  if (!PyArg_ParseTuple(args, "O!iiii", &PyArray_Type, &v, &k, &clusters_to_search,
-                        &points_to_rerank, &return_distances))
+  if (!PyArg_ParseTuple(args, "O!iiiii", &PyArray_Type, &v, &k, &clusters_to_search,
+                        &points_to_rerank, &return_distances, &n_threads))
     return NULL;
+
+  if (n_threads <= 0) {
+    n_threads = omp_get_max_threads();
+  }
 
   float *indata = reinterpret_cast<float *>(PyArray_DATA(v));
   PyObject *nearest;
@@ -306,6 +320,7 @@ static PyObject *lorann_search(LorannIndex *self, PyObject *args) {
       float *out_distances = reinterpret_cast<float *>(PyArray_DATA((PyArrayObject *)distances));
 
       Py_BEGIN_ALLOW_THREADS;
+#pragma omp parallel for num_threads(n_threads)
       for (int i = 0; i < n; ++i) {
         self->index->search(indata + i * dim, k, clusters_to_search, points_to_rerank,
                             out_idx + i * k, out_distances + i * k);
@@ -318,6 +333,7 @@ static PyObject *lorann_search(LorannIndex *self, PyObject *args) {
       return out_tuple;
     } else {
       Py_BEGIN_ALLOW_THREADS;
+#pragma omp parallel for num_threads(n_threads)
       for (int i = 0; i < n; ++i) {
         self->index->search(indata + i * dim, k, clusters_to_search, points_to_rerank,
                             out_idx + i * k);
@@ -330,9 +346,14 @@ static PyObject *lorann_search(LorannIndex *self, PyObject *args) {
 
 static PyObject *lorann_exact_search(LorannIndex *self, PyObject *args) {
   PyArrayObject *v;
-  int k, dim, n, return_distances;
+  int k, dim, n, return_distances, n_threads;
 
-  if (!PyArg_ParseTuple(args, "O!ii", &PyArray_Type, &v, &k, &return_distances)) return NULL;
+  if (!PyArg_ParseTuple(args, "O!iii", &PyArray_Type, &v, &k, &return_distances, &n_threads))
+    return NULL;
+
+  if (n_threads <= 0) {
+    n_threads = omp_get_max_threads();
+  }
 
   float *indata = reinterpret_cast<float *>(PyArray_DATA(v));
   PyObject *nearest;
@@ -376,6 +397,7 @@ static PyObject *lorann_exact_search(LorannIndex *self, PyObject *args) {
       float *out_distances = reinterpret_cast<float *>(PyArray_DATA((PyArrayObject *)distances));
 
       Py_BEGIN_ALLOW_THREADS;
+#pragma omp parallel for num_threads(n_threads)
       for (int i = 0; i < n; ++i) {
         self->index->exact_search(indata + i * dim, k, out_idx + i * k, out_distances + i * k);
       }
@@ -387,6 +409,7 @@ static PyObject *lorann_exact_search(LorannIndex *self, PyObject *args) {
       return out_tuple;
     } else {
       Py_BEGIN_ALLOW_THREADS;
+#pragma omp parallel for num_threads(n_threads)
       for (int i = 0; i < n; ++i) {
         self->index->exact_search(indata + i * dim, k, out_idx + i * k);
       }

@@ -103,10 +103,14 @@ class LorannBase {
    * @param approximate Whether to turn on various approximations during index construction.
    * Defaults to true. Setting approximate to false slows down the index construction but can
    * slightly increase the recall, especially if no exact re-ranking is used in the query phase.
+   * @param num_threads Number of CPU threads to use (set to -1 to use all cores)
    */
-  void build(const bool approximate = true) { build(_data, _n_samples, approximate); }
+  void build(const bool approximate = true, int num_threads = -1) {
+    build(_data, _n_samples, approximate, num_threads);
+  }
 
-  virtual void build(const float *query_data, const int query_n, const bool approximate) {}
+  virtual void build(const float *query_data, const int query_n, const bool approximate,
+                     int num_threads) {}
 
   virtual void search(float *data, const int k, const int clusters_to_search,
                       const int points_to_rerank, int *idx_out, float *dist_out = nullptr) const {}
@@ -191,7 +195,7 @@ class LorannBase {
     reorder_exact(x, k, final_select, idx_out, dist_out);
   }
 
-  void reorder_exact(const float *x, int k, const std::vector<int> &in, int *out,
+  void reorder_exact(const float *q, int k, const std::vector<int> &in, int *out,
                      float *dist_out = nullptr) const {
     const int n = in.size();
     Vector dist(n);
@@ -199,11 +203,11 @@ class LorannBase {
     const float *data_ptr = _data;
     if (_euclidean) {
       for (int i = 0; i < n; ++i) {
-        dist[i] = squared_euclidean(x, data_ptr + in[i] * _dim, _dim);
+        dist[i] = squared_euclidean(q, data_ptr + in[i] * _dim, _dim);
       }
     } else {
       for (int i = 0; i < n; ++i) {
-        dist[i] = dot_product(x, data_ptr + in[i] * _dim, _dim);
+        dist[i] = dot_product(q, data_ptr + in[i] * _dim, _dim);
       }
     }
 
@@ -230,16 +234,16 @@ class LorannBase {
 
   std::vector<std::vector<int>> clustering(KMeans &global_clustering, const float *data,
                                            const int n, const float *train_data, const int train_n,
-                                           const bool approximate) {
+                                           const bool approximate, int num_threads) {
     const int to_sample = SAMPLED_POINTS_PER_CLUSTER * _n_clusters;
     if (!_balanced && approximate && to_sample < 0.5f * n) {
       /* sample points for k-means */
       const RowMatrix sampled =
           sample_rows(Eigen::Map<const RowMatrix>(data, n, _global_dim), to_sample);
-      (void)global_clustering.train(sampled.data(), sampled.rows(), sampled.cols());
+      (void)global_clustering.train(sampled.data(), sampled.rows(), sampled.cols(), num_threads);
       _cluster_map = global_clustering.assign(data, n, 1);
     } else {
-      _cluster_map = global_clustering.train(data, n, _global_dim);
+      _cluster_map = global_clustering.train(data, n, _global_dim, num_threads);
     }
 
     return global_clustering.assign(train_data, train_n, _train_size);

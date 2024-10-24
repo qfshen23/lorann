@@ -1,5 +1,7 @@
 #pragma once
 
+#include <omp.h>
+
 #include <Eigen/Dense>
 #include <iostream>
 #include <stdexcept>
@@ -50,11 +52,12 @@ class KMeans {
    * @param data The data matrix
    * @param n Number of points (rows) in the data matrix
    * @param m Number of dimensions (cols) in the data matrix
+   * @param num_threads Number of CPU threads to use (set to -1 to use all cores)
    * @return std::vector<std::vector<int>> Clustering assignments as a vector of
    * vectors where each vector contains the ids of the points assigned to the
    * corresponding cluster
    */
-  std::vector<std::vector<int>> train(const float *data, int n, int m) {
+  std::vector<std::vector<int>> train(const float *data, int n, int m, int num_threads = -1) {
     LORANN_ENSURE_POSITIVE(n);
     LORANN_ENSURE_POSITIVE(m);
 
@@ -67,6 +70,10 @@ class KMeans {
           "The number of points should be at least as large as the number of clusters");
     }
 
+    if (num_threads <= 0) {
+      num_threads = omp_get_max_threads();
+    }
+
     Eigen::Map<const RowMatrix> train_mat = Eigen::Map<const RowMatrix>(data, n, m);
 
     _assignments = std::vector<int>(n);
@@ -77,7 +84,7 @@ class KMeans {
     postprocess_centroids();
 
     for (int i = 0; i < _iters; ++i) {
-      assign_clusters(train_mat, data_norms);
+      assign_clusters(train_mat, data_norms, num_threads);
       update_centroids(train_mat);
       split_clusters(train_mat);
       postprocess_centroids();
@@ -86,7 +93,7 @@ class KMeans {
                   << std::endl;
     }
 
-    assign_clusters(train_mat, data_norms);
+    assign_clusters(train_mat, data_norms, num_threads);
 
     if (_balanced) {
       if (_verbose) std::cout << "Balancing" << std::endl;
@@ -195,9 +202,11 @@ class KMeans {
 
  private:
   /* Assign each data point to its nearest cluster */
-  void assign_clusters(const Eigen::Map<const RowMatrix> &train_mat, const Vector &data_norms) {
+  void assign_clusters(const Eigen::Map<const RowMatrix> &train_mat, const Vector &data_norms,
+                       const int num_threads) {
     if (_euclidean) {
       Eigen::VectorXf centroid_norms = _centroids.rowwise().squaredNorm();
+#pragma omp parallel for num_threads(num_threads)
       for (int i = 0; i < train_mat.rows(); ++i) {
         Eigen::VectorXf dot_products = train_mat.row(i) * _centroids.transpose();
         float min_dist = std::numeric_limits<float>::max();
@@ -210,6 +219,7 @@ class KMeans {
         }
       }
     } else {
+#pragma omp parallel for num_threads(num_threads)
       for (int i = 0; i < train_mat.rows(); ++i) {
         Eigen::VectorXf dot_products = train_mat.row(i) * _centroids.transpose();
         float max_similarity = std::numeric_limits<float>::min();

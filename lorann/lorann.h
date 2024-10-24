@@ -1,5 +1,7 @@
 #pragma once
 
+#include <omp.h>
+
 #include <Eigen/Dense>
 #include <cstring>
 #include <stdexcept>
@@ -164,9 +166,15 @@ class Lorann : public LorannBase {
    * @param approximate Whether to turn on various approximations during index construction.
    * Defaults to true. Setting approximate to false slows down the index construction but can
    * slightly increase the recall, especially if no exact re-ranking is used in the query phase.
+   * @param num_threads Number of CPU threads to use (set to -1 to use all cores)
    */
-  void build(const float *query_data, const int query_n, const bool approximate = true) override {
+  void build(const float *query_data, const int query_n, const bool approximate = true,
+             int num_threads = -1) override {
     LORANN_ENSURE_POSITIVE(query_n);
+
+    if (num_threads <= 0) {
+      num_threads = omp_get_max_threads();
+    }
 
     Eigen::Map<RowMatrix> train_mat(_data, _n_samples, _dim);
     Eigen::Map<const RowMatrix> query_mat(query_data, query_n, _dim);
@@ -195,11 +203,11 @@ class Lorann : public LorannBase {
       RowMatrix reduced_query_mat = query_mat * global_dim_reduction;
       cluster_train_map =
           clustering(global_clustering, reduced_train_mat.data(), reduced_train_mat.rows(),
-                     reduced_query_mat.data(), reduced_query_mat.rows(), approximate);
+                     reduced_query_mat.data(), reduced_query_mat.rows(), approximate, num_threads);
     } else {
       cluster_train_map =
           clustering(global_clustering, reduced_train_mat.data(), reduced_train_mat.rows(),
-                     reduced_train_mat.data(), reduced_train_mat.rows(), approximate);
+                     reduced_train_mat.data(), reduced_train_mat.rows(), approximate, num_threads);
     }
 
     /* rotate the cluster centroid matrix */
@@ -230,6 +238,7 @@ class Lorann : public LorannBase {
       _cluster_norms.resize(_n_clusters);
     }
 
+#pragma omp parallel for num_threads(num_threads)
     for (int i = 0; i < _n_clusters; ++i) {
       if (_cluster_map[i].size() == 0) continue;
 
