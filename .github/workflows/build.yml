@@ -45,7 +45,7 @@ jobs:
         if [ "${{ matrix.c }}" == "gcc" ]; then
           sudo apt-get install -y gcc g++;
         else
-          sudo apt-get install -y clang;
+          sudo apt-get install -y clang libomp-dev;
         fi
 
     - name: Set up compiler
