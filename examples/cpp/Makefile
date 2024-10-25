@@ -10,7 +10,7 @@ prepare-data:
 	rm wiki-news-300d-1M.vec.zip
 
 example:
-	$(CXX) -std=c++17 -O3 -march=native -DNDEBUG -I../../lorann -flax-vector-conversions example.cpp -o example
+	$(CXX) -std=c++17 -O3 -march=native -fopenmp -DNDEBUG -I../../lorann -flax-vector-conversions example.cpp -o example -lgomp
 
 clean:
 	rm example wiki-news-300d-1M.vec index.bin
