@@ -305,7 +305,7 @@ class Lorann : public LorannBase {
       _cluster_sizes(i) = static_cast<int>(_cluster_map[i].size());
     }
   }
-
+ 
  private:
   Lorann() = default; /* default constructor should only be used for serialization */
 

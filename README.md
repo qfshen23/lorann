@@ -94,36 +94,4 @@ For a complete example, see [examples/cpp](examples/cpp).
 
 [C++ documentation](https://eliasjaasaari.com/lorann/cpp.html)
 
-### GPU
 
-Hardware accelerators such as GPUs and TPUs can be used to speed up ANN search for queries that arrive in batches. GPU/TPU support in LoRANN is experimental and available only as a Python module. Currently, the GPU is used only for queries and not for index building.
-
-To use it, install the Python package and import `Lorann` from the desired submodule:
-
-```python
-from lorann_gpu.jax import Lorann
-```
-
-The available GPU submodules are `jax`, `torch`, `cupy`, and `mlx` with corresponding dependencies [Jax](https://jax.readthedocs.io/en/latest/), [PyTorch](https://pytorch.org/), [CuPy](https://cupy.dev/), or [MLX](https://github.com/ml-explore/mlx). The Jax implementation will probably be the fastest, at least on NVIDIA GPUs.
-
-For a complete example, see [examples/gpu_example.py](examples/gpu_example.py)
-
-## Citation
-
-If you use the library in an academic context, please consider citing the following paper:
-
-> Jääsaari, E., Hyvönen, V., & Roos, T. (2024). LoRANN: Low-Rank Matrix Factorization for Approximate Nearest Neighbor Search. Advances in Neural Information Processing Systems, 37.
-
-~~~~
-@article{Jaasaari2024,
-  title={LoRANN: Low-Rank Matrix Factorization for Approximate Nearest Neighbor Search},
-  author={J{\"a}{\"a}saari, Elias and Hyv{\"o}nen, Ville and Roos, Teemu},
-  journal={Advances in Neural Information Processing Systems},
-  volume={37},
-  year={2024}
-}
-~~~~
-
-## License
-
-LoRANN is available under the MIT License (see [LICENSE](LICENSE)). Note that third-party libraries in the [lorann](lorann) folder may be distributed under other open source licenses (see [licenses](licenses)).
