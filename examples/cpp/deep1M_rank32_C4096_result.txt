@@ -1,49 +1,49 @@
 ------------------------------------------------
 nprobe = 10 k = 100
-Recall = 43.054%	
-Time = 1335.81 us 	 QPS = 748.607 query/s
+Recall = 62.789%	
+Time = 453.32 us 	 QPS = 2205.95 query/s
 ------------------------------------------------
 nprobe = 20 k = 100
-Recall = 57.812%	
-Time = 1461.51 us 	 QPS = 684.226 query/s
+Recall = 75.947%	
+Time = 499.238 us 	 QPS = 2003.05 query/s
 ------------------------------------------------
 nprobe = 50 k = 100
-Recall = 76.581%	
-Time = 1845.8 us 	 QPS = 541.772 query/s
+Recall = 88.92%	
+Time = 643.515 us 	 QPS = 1553.97 query/s
 ------------------------------------------------
 nprobe = 80 k = 100
-Recall = 84.314%	
-Time = 2202.05 us 	 QPS = 454.121 query/s
+Recall = 93.223%	
+Time = 780.334 us 	 QPS = 1281.5 query/s
 ------------------------------------------------
 nprobe = 100 k = 100
-Recall = 87.402%	
-Time = 2441.66 us 	 QPS = 409.557 query/s
+Recall = 94.749%	
+Time = 866.431 us 	 QPS = 1154.16 query/s
 ------------------------------------------------
 nprobe = 200 k = 100
-Recall = 94.242%	
-Time = 3650.32 us 	 QPS = 273.949 query/s
+Recall = 97.624%	
+Time = 1307.13 us 	 QPS = 765.036 query/s
 ------------------------------------------------
 nprobe = 10 k = 100
-Recall = 43.054%	
-Time = 1296.35 us 	 QPS = 771.399 query/s
+Recall = 62.789%	
+Time = 432.498 us 	 QPS = 2312.15 query/s
 ------------------------------------------------
 nprobe = 20 k = 100
-Recall = 57.812%	
-Time = 1431.01 us 	 QPS = 698.81 query/s
+Recall = 75.947%	
+Time = 468.919 us 	 QPS = 2132.56 query/s
 ------------------------------------------------
 nprobe = 50 k = 100
-Recall = 76.581%	
-Time = 1818.83 us 	 QPS = 549.803 query/s
+Recall = 88.92%	
+Time = 617.715 us 	 QPS = 1618.87 query/s
 ------------------------------------------------
 nprobe = 80 k = 100
-Recall = 84.314%	
-Time = 2193.54 us 	 QPS = 455.884 query/s
+Recall = 93.223%	
+Time = 773.989 us 	 QPS = 1292.01 query/s
 ------------------------------------------------
 nprobe = 100 k = 100
-Recall = 87.402%	
-Time = 2440.58 us 	 QPS = 409.739 query/s
+Recall = 94.749%	
+Time = 881.111 us 	 QPS = 1134.93 query/s
 ------------------------------------------------
 nprobe = 200 k = 100
-Recall = 94.242%	
-Time = 3699.27 us 	 QPS = 270.324 query/s
+Recall = 97.624%	
+Time = 1363.04 us 	 QPS = 733.654 query/s
 Saving the index to disk...

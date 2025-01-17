@@ -1,8 +1,9 @@
 cd ..
-g++ -o ./index ./index.cpp -I ../../lorann/ -I /usr/include/eigen3 -O3 -fopenmp -mavx
-
+g++ -o ./index ./index.cpp -I ../../lorann/ -I /usr/include/eigen3 -O3 -fopenmp -mavx -msse
 C=4096
 datasets=('gist' 'deep1M')
+
+# datasets=('sift')
 
 for data in "${datasets[@]}"
 do  

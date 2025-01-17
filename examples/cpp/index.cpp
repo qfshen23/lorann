@@ -165,7 +165,7 @@ int main(int argc, char * argv[]) {
     
     int rank = 32;
     int subk = 100;
-    int C=4096;
+    int C = 4096;
 
     while(iarg != -1) {
         iarg = getopt_long(argc, argv, "q:g:r:n:k:p:a:c:i:", longopts, &ind);
@@ -191,6 +191,9 @@ int main(int argc, char * argv[]) {
             case 'c':
                 if(optarg)C = atoi(optarg);
                 break;
+            case 'i':
+                if(optarg)strcpy(index_path, optarg);
+                break;
         }
     }
 
@@ -213,8 +216,13 @@ int main(int argc, char * argv[]) {
     std::cerr << "Building the index..." << std::endl;
     index.build(true, 32);
 
-    std::cerr << "Testing the index..." << std::endl;
-    test(index, Q, G, subk);
+    // std::cerr << "Testing the index..." << std::endl;
+    // test(index, Q, G, subk);
+
+    std::cout << "Saving the index to disk..." << std::endl;
+    std::ofstream output_file(index_path, std::ios::binary);
+    cereal::BinaryOutputArchive output_archive(output_file);
+    output_archive(index);
 
     return 0;
 }
